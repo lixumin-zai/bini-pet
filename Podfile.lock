@@ -1,0 +1,68 @@
+PODS:
+  - libavif/core (0.11.1)
+  - libavif/libdav1d (0.11.1):
+    - libavif/core
+    - libdav1d (>= 0.6.0)
+  - libdav1d (1.2.0)
+  - libwebp (1.3.2):
+    - libwebp/demux (= 1.3.2)
+    - libwebp/mux (= 1.3.2)
+    - libwebp/sharpyuv (= 1.3.2)
+    - libwebp/webp (= 1.3.2)
+  - libwebp/demux (1.3.2):
+    - libwebp/webp
+  - libwebp/mux (1.3.2):
+    - libwebp/demux
+  - libwebp/sharpyuv (1.3.2)
+  - libwebp/webp (1.3.2):
+    - libwebp/sharpyuv
+  - SDWebImage (5.20.0):
+    - SDWebImage/Core (= 5.20.0)
+  - SDWebImage/Core (5.20.0)
+  - SDWebImageAVIFCoder (0.11.0):
+    - libavif/core (>= 0.11.0)
+    - SDWebImage (~> 5.10)
+  - SDWebImagePDFCoder (1.0.1):
+    - SDWebImage (>= 5.14.1)
+  - SDWebImageSVGCoder (1.8.0):
+    - SDWebImage/Core (~> 5.6)
+  - SDWebImageSwiftUI (3.1.3):
+    - SDWebImage (~> 5.10)
+  - SDWebImageWebPCoder (0.14.6):
+    - libwebp (~> 1.0)
+    - SDWebImage/Core (~> 5.17)
+
+DEPENDENCIES:
+  - libavif/libdav1d
+  - SDWebImageAVIFCoder
+  - SDWebImagePDFCoder
+  - SDWebImageSVGCoder
+  - SDWebImageSwiftUI
+  - SDWebImageWebPCoder
+
+SPEC REPOS:
+  trunk:
+    - libavif
+    - libdav1d
+    - libwebp
+    - SDWebImage
+    - SDWebImageAVIFCoder
+    - SDWebImagePDFCoder
+    - SDWebImageSVGCoder
+    - SDWebImageSwiftUI
+    - SDWebImageWebPCoder
+
+SPEC CHECKSUMS:
+  libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
+  libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
+  libwebp: 1786c9f4ff8a279e4dac1e8f385004d5fc253009
+  SDWebImage: 73c6079366fea25fa4bb9640d5fb58f0893facd8
+  SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
+  SDWebImagePDFCoder: ec8d162f5a4a34760bf1ea3d7f818dd85dc82e81
+  SDWebImageSVGCoder: 8e10c8f6cc879c7dfb317b284e13dd589379f01c
+  SDWebImageSwiftUI: a6d7129fb68fc18c8b930b869ddcfce314e49ded
+  SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
+
+PODFILE CHECKSUM: 713e04678328d80873373de47075e9b22d1428d1
+
+COCOAPODS: 1.16.2
