@@ -16,7 +16,9 @@ enum Status {
     case standing
     case lyingDown
     case eating
+    case toEat
     case petting
+    case randomWalking
 }
 
 enum WalkingStatus {
@@ -36,12 +38,12 @@ struct Pet: View {
     @State private var offsetY: CGFloat = 0
     
     @Binding var status: Status
-    @Binding var walkingStatus: WalkingStatus
+//    @Binding var walkingStatus: WalkingStatus
     
     @Binding var isMovingRight: Bool
     @State private var isMovingUp: Bool = true // 控制移动方向
-    @State private var imageUrl: URL?
-    private let HorizontalStepSize: CGFloat = 15 // 每次移动的步长
+    @State private var imageUrl: URL? = Bundle.main.url(forResource: "brown_idle_8fps", withExtension: "gif")
+    private let HorizontalStepSize: CGFloat = 7 // 每次移动的步长
     private let VerticalStepSize: CGFloat = 7 // 每次移动的步长
     
     // 定义传入的参数
