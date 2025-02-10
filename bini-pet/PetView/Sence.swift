@@ -11,9 +11,11 @@ import SDWebImageSwiftUI
 struct Sence: View {
     @State private var tapLocation: CGPoint = .zero
     
+    @State private var containerSize: CGPoint = .zero
+    
     // 宠物信息
-    @State private var petOriginPosition: CGPoint = CGPoint(x: 50, y: 150)
-    @State private var petPosition: CGPoint = .zero // 用于存储 Pet 偏移 的位置
+    @State private var petOriginPosition: CGPoint = CGPoint(x: 0.25, y: 0.75) // 位置百分比
+    @State private var petPositionOffset: CGPoint = .zero // 用于存储 Pet 偏移 的位置
     @State private var petSize: CGSize = .zero // 用于存储 Pet 的尺寸
     
     @State private var isWalk: Bool = false
@@ -30,105 +32,125 @@ struct Sence: View {
     
     var body: some View {
         ZStack {
-            
-            
-            ZStack {
-                // 背景
-                WebImage(url: Bundle.main.url(forResource: "room", withExtension: "png"))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 200, height: 200)
-                // 窗户背景
-                WebImage(url: Bundle.main.url(forResource: "outside_base", withExtension: "jpeg"))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 60, height: 60)
-                    .position(x: 80, y: 60)
-                if tapLocation != .zero {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 6, height: 6)
-                        .position(x: tapLocation.x, y: tapLocation.y)
-                        .drawingGroup() // 渲染为位图，避免抗锯齿
-                }
-                Pet(status: $petStatus, isMovingRight: $isMovingRight, pettingTimes: $pettingTimes)
-                    .position(x: petOriginPosition.x, y: petOriginPosition.y)
-                    .offset(x: petPosition.x, y: petPosition.y) // 根据 petPosition 移动 Pet()
-                    .background(GeometryReader { geometry in
-                        Color.clear
-                            .onAppear {
-                                // 获取 Pet() 的尺寸
-                                self.petSize = geometry.size
-                                print(geometry.size)
-                            }
-                    })
-                    .onAppear {
-                        //                    petStatus = .standing
-                        //                    stopWalk()
-                        startStepMovement()
+            GeometryReader { container in
+                ZStack {
+                    // 背景（占满容器宽度的 80%，高度自适应）
+                    WebImage(url: Bundle.main.url(forResource: "room", withExtension: "png"))
+                        .resizable()
+                        .scaledToFit()
+                        .aspectRatio(contentMode: .fill) // 填充屏幕（可能裁剪图片）
+                        .frame(
+                            width: container.size.width * 1, // 屏幕宽度的 80%
+                            height: container.size.height * 1 // 保持宽高比 1:1（根据实际需求调整）
+                        )
+                    
+                    // 窗户背景（占容器宽度的 30%，高度自适应）
+                    WebImage(url: Bundle.main.url(forResource: "outside_base", withExtension: "jpeg"))
+                        .resizable()
+                        .scaledToFit()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(
+                            width: container.size.width * 0.3, // 容器宽度的 30%
+                            height: container.size.width * 0.3 // 保持正方形
+                        )
+                        .position(
+                            x: container.size.width * 0.4, // 水平位置 40%
+                            y: container.size.height * 0.3 // 垂直位置 30%
+                        )
+                    
+                    // 点击标记点
+                    if tapLocation != .zero {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(
+                                width: 6, // 标记点大小为宽度的 3%
+                                height: 6
+                            )
+                            .position(tapLocation)
                     }
+                    
+                    // 宠物组件（宽高占容器 20%）
+                    Pet(status: $petStatus, isMovingRight: $isMovingRight, pettingTimes: $pettingTimes)
+                        .frame(
+                            width: container.size.width * 0.2,
+                            height: container.size.width * 0.2
+                        )
+                        .position(
+                            x: container.size.width * petOriginPosition.x + petPositionOffset.x, // 居中 + 动态偏移
+                            y: container.size.height * petOriginPosition.y + petPositionOffset.y
+                        )
+                        .onAppear {
+                            containerSize.x = container.size.width
+                            containerSize.y = container.size.height
+                            start()
+                        }
+                }
+                .frame(
+                    width: container.size.width * 0.8, // 主内容区域占屏幕宽度的 80%
+                    height: container.size.width * 0.8 // 保持宽高一致
+                )
+                .position(
+                    x: container.size.width / 2, // 居中
+                    y: container.size.height / 2
+                )
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            // 计算点击位置相对于容器的比例坐标
+                            let tapX = value.location.x
+                            let tapY = value.location.y
+                            self.tapLocation = CGPoint(x: tapX, y: tapY)
+                            
+                            // 宠物当前位置（中心点）
+                            let petCenterX = container.size.width * petOriginPosition.x + petPositionOffset.x
+                            let petCenterY = container.size.height * petOriginPosition.y + petPositionOffset.y
+                            
+                            // 计算移动方向和步长（基于容器宽度动态调整）
+                            let deltaX = tapX - petCenterX
+                            let deltaY = tapY - petCenterY
+                            let distance = sqrt(deltaX * deltaX + deltaY * deltaY)
+                            
+                            // 步长按容器比例缩放（基础步长为屏幕宽度的 2%）
+                            let baseStep = container.size.width * 0.05
+                            self.HorizontalStepSize = (deltaX / distance) * baseStep
+                            self.VerticalStepSize = (deltaY / distance) * baseStep
+                            
+                            petStatus = .walking
+                        }
+                )
                 
             }
-            .frame(width: 200, height: 200)
-            .clipped()
-            .contentShape(Rectangle()) // 确保整个区域都可以响应点击
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        // 获取手指当前位置
-                        self.tapLocation = value.location
-                        
-                        // 计算 pet 的当前位置
-                        let petCenter = CGPoint(x: self.petPosition.x + self.petOriginPosition.x,
-                                                y: self.petPosition.y + self.petOriginPosition.y)
-                        
-                        // 计算 tapLocation 和 petCenter 之间的向量
-                        let deltaX = self.tapLocation.x - petCenter.x
-                        let deltaY = self.tapLocation.y - petCenter.y
-                        
-                        // 计算距离
-                        let distance = sqrt(deltaX * deltaX + deltaY * deltaY)
-                        
-                        
-                        // 更新移动方向
-                        self.isMovingRight = deltaX > 0
-                        self.isMovingUp = deltaY > 0  // 注意：Y轴方向在屏幕上是从上到下增加的
-                        
-                        // 根据距离调整步长（可以根据需要调整步长的计算方式）
-                        self.HorizontalStepSize = abs(deltaX) / distance * 7
-                        self.VerticalStepSize = abs(deltaY) / distance * 7
-                        
-                        petStatus = .walking
-                    }
-                )
+            
+            
+            // 文字始终居中（独立于动态布局）
             Text("123")
-                .font(.system(size: 24, weight: .bold)) // 设置字体大小和粗体
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center) // 居中
+                .font(.system(size: 24, weight: .bold))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
         .background(Color.black)
     }
     
     func startWalk() {
         petStatus = .walking
-        if petPosition.x > 70 {
+        if petPositionOffset.x > 70 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.47) {
                 petStatus = .standing
             }
             isMovingRight = false
         }
-        if petPosition.x < -32.0 {
+        if petPositionOffset.x < -32.0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.47) {
                 petStatus = .standing
             }
             isMovingRight = true
         }
-        if petPosition.y > 32.0 {
+        if petPositionOffset.y > 32.0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.47) {
                 petStatus = .standing
             }
             isMovingUp = false
         }
-        if petPosition.y < -32.0 {
+        if petPositionOffset.y < -32.0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.47) {
                 petStatus = .standing
             }
@@ -138,11 +160,11 @@ struct Sence: View {
         let verticalStep = isMovingUp ? VerticalStepSize: -VerticalStepSize
 //        print(petPosition.x, petPosition.y)
         withAnimation(.linear(duration: 0.5)) {
-            petPosition.x += horizontalStep
-            petPosition.y += verticalStep
+            petPositionOffset.x += horizontalStep
+            petPositionOffset.y += verticalStep
         }
-        let petCenter = CGPoint(x: self.petPosition.x + self.petOriginPosition.x,
-                                y: self.petPosition.y + self.petOriginPosition.y)
+        let petCenter = CGPoint(x: self.petPositionOffset.x + containerSize.x * self.petOriginPosition.x,
+                                y: self.petPositionOffset.y + containerSize.y * self.petOriginPosition.y)
 
         // 计算 tapLocation 和 petCenter 之间的距离
         let deltaX = self.tapLocation.x - petCenter.x
@@ -159,7 +181,7 @@ struct Sence: View {
         
     }
     
-    func startStepMovement() {
+    func start() {
         Timer.scheduledTimer(withTimeInterval: 0.52, repeats: true) { timer in
             scheduleTaskAtHalfHour() // 判断没半个小时做的事情
             
@@ -193,8 +215,8 @@ struct Sence: View {
         let horizontalStep = isMovingRight ? HorizontalStepSize : -HorizontalStepSize
         let verticalStep = isMovingUp ? VerticalStepSize: -VerticalStepSize
         withAnimation(.linear(duration: 0.5)) {
-            petPosition.x += horizontalStep
-            petPosition.y += verticalStep
+            petPositionOffset.x += horizontalStep
+            petPositionOffset.y += verticalStep
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.47) {
             if Int.random(in: 0...10) > 8 {
@@ -203,16 +225,16 @@ struct Sence: View {
             if Int.random(in: 0...10) > 8 {
                 isMovingUp.toggle()
             }
-            if petPosition.x > 70 {
+            if petPositionOffset.x > 70 {
                 isMovingRight = false
             }
-            if petPosition.x < -32.0 {
+            if petPositionOffset.x < -32.0 {
                 isMovingRight = true
             }
-            if petPosition.y > 32.0 {
+            if petPositionOffset.y > 32.0 {
                 isMovingUp = false
             }
-            if petPosition.y < -32.0 {
+            if petPositionOffset.y < -32.0 {
                 isMovingUp = true
             }
         }
@@ -224,11 +246,11 @@ struct Sence: View {
         let verticalStep = isMovingUp ? VerticalStepSize: -VerticalStepSize
 //        print(petPosition.x, petPosition.y)
         withAnimation(.linear(duration: 0.5)) {
-            petPosition.x += horizontalStep
-            petPosition.y += verticalStep
+            petPositionOffset.x += horizontalStep
+            petPositionOffset.y += verticalStep
         }
-        let petCenter = CGPoint(x: self.petPosition.x + self.petOriginPosition.x,
-                                y: self.petPosition.y + self.petOriginPosition.y)
+        let petCenter = CGPoint(x: self.petPositionOffset.x + containerSize.x * self.petOriginPosition.x,
+                                y: self.petPositionOffset.y + containerSize.y * self.petOriginPosition.y)
 
         // 计算 tapLocation 和 petCenter 之间的距离
         let deltaX = bowlPosition.x - petCenter.x
@@ -240,7 +262,7 @@ struct Sence: View {
             petStatus = .eating
         }
         print(bowlPosition)
-        print(petPosition.x, petPosition.y)
+        print(petPositionOffset.x, petPositionOffset.y)
         
     }
     
@@ -256,8 +278,8 @@ struct Sence: View {
             if minute == 58 || minute == 30 {
                 // 计算 pet 的当前位置
                 if petStatus != .toEat {
-                    let petCenter = CGPoint(x: self.petPosition.x + self.petOriginPosition.x,
-                                            y: self.petPosition.y + self.petOriginPosition.y)
+                    let petCenter = CGPoint(x: self.petPositionOffset.x + containerSize.x * self.petOriginPosition.x,
+                                            y: self.petPositionOffset.y + containerSize.y * self.petOriginPosition.y)
                     
                     // 计算 tapLocation 和 petCenter 之间的向量
                     let deltaX = self.bowlPosition.x - petCenter.x
