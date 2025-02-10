@@ -25,7 +25,7 @@ struct FrostedGlassCard: View {
     
     var body: some View {
         Sence()
-        .scaleEffect(1.5)  // 缩放1.5倍
+            .frame(width: 300, height: 300)
     }
 }
 
