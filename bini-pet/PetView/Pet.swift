@@ -71,6 +71,8 @@ struct PetView: View {
     @Binding var status: PetStatus    // 宠物状态
     @Binding var isMovingRight: Bool  // 控制移动左右方向
     @Binding var pettingTimes: Int    // 宠物的抚摸时间
+    @Binding var petSize: CGSize
+    @Binding var containerSize: CGPoint
     
     @State private var offsetX: CGFloat = 0    // 偏移量
     @State private var offsetY: CGFloat = 0    // 偏移量
@@ -83,7 +85,7 @@ struct PetView: View {
         WebImage(url: imageUrl)
             .resizable()
             .scaledToFit()
-            .frame(width: 40, height: 40)
+            .frame(width: containerSize.x*petSize.width, height: containerSize.y*petSize.height)
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
                     .stroke(Color.blue, lineWidth: 2) // 设置边框颜色和宽度

@@ -15,7 +15,8 @@ struct Sence: View {
     
     // 宠物信息
     @State private var petOriginPosition: CGPoint = CGPoint(x: 0.25, y: 0.75)  // 位置百分比
-    @State private var petSize: CGSize = CGSize(width: 40, height: 40)  // 用于存储 Pet 的尺寸
+    @State private var petSize: CGSize = CGSize(width: 0.2, height: 0.2)  // 用于存储 Pet 的尺寸
+    @State private var isPlay: Bool = false
     
     @State private var isMovingRight: Bool = true        // 控制水平移动方向
     @State private var isMovingUp: Bool = true           // 控制垂直移动方向
@@ -23,7 +24,7 @@ struct Sence: View {
     @State private var VerticalStepSize: CGFloat = 0.05     // 每次移动的步长
     
     @State private var petStatus: PetStatus = .standing  // 宠物的状态
-    @State private var pettingTimes: Int = 0             // 宠物的抚摸步
+    @State private var pettingTimes: Int = 0             // 宠物的抚摸时间步长
     
     @State private var hunger: Int = 50                  // 饱腹值
     
@@ -33,7 +34,7 @@ struct Sence: View {
         ZStack {
             GeometryReader { container in
                 ZStack {
-                    // 背景（占满容器宽度的 80%，高度自适应）
+                    // 背景
                     WebImage(url: Bundle.main.url(forResource: "room", withExtension: "png"))
                         .resizable()
                         .scaledToFit()
@@ -56,8 +57,6 @@ struct Sence: View {
                             x: container.size.width * 0.4, // 水平位置 40%
                             y: container.size.height * 0.3 // 垂直位置 30%
                         )
-                    
-                    
                     // 点击标记点
                     if touchLocation != .zero && (0.0...0.75).contains(touchLocation.x/container.size.width) && (0.5...1.0).contains(touchLocation.y/container.size.height) {
                         Circle()
@@ -68,12 +67,12 @@ struct Sence: View {
                             )
                             .position(touchLocation)
                         }
-                    
-                    
                     // 宠物组件（宽高占容器 20%）
-                    PetView( status: $petStatus,
-                        isMovingRight: $isMovingRight,
-                        pettingTimes: $pettingTimes)
+                    PetView(status: $petStatus,
+                            isMovingRight: $isMovingRight,
+                            pettingTimes: $pettingTimes,
+                            petSize: $petSize,
+                            containerSize: $containerSize)
                         .frame(
                             width: container.size.width * 0.2,
                             height: container.size.width * 0.2
@@ -88,10 +87,6 @@ struct Sence: View {
                             start()
                         }
                 }
-//                .frame(
-//                    width: container.size.width * 0.8, // 主内容区域占屏幕宽度的 80%
-//                    height: container.size.width * 0.8 // 保持宽高一致
-//                )
                 .position(
                     x: container.size.width / 2, // 居中
                     y: container.size.height / 2
@@ -100,18 +95,27 @@ struct Sence: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             // 计算点击位置相对于容器的比例坐标
-
                             self.touchLocation = CGPoint(x: value.location.x, y: value.location.y)
+                            if touchLocation != .zero && (0.0...0.75).contains(touchLocation.x/container.size.width) && (0.5...1.0).contains(touchLocation.y/container.size.height) {
+                                isPlay = true
+                            } else {
+                                isPlay = false
+                            }
                             
-                            petStatus = .walking
+                            if isPlay{
+                                petStatus = .walking
+                            } else {
+                                petStatus = .standing
+                            }
                         }
                 )
             }
+            .scaledToFit()
+            .aspectRatio(contentMode: .fill)
             
-            // 文字始终居中（独立于动态布局）
-            Text("123")
-                .font(.system(size: 24, weight: .bold))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            Text("饱腹值")
+                .font(.system(size: containerSize.x * 0.06, weight: .bold))
+                .position(x: containerSize.x * 0.1, y: -containerSize.y * 0.05)
         }
         .background(Color.black)
     }
@@ -153,15 +157,12 @@ struct Sence: View {
     
     func startWalk() {
         // 宠物当前位置（中心点）
-        let petCenterX = containerSize.x * petOriginPosition.x
-        let petCenterY = containerSize.y * petOriginPosition.y
-        
-        let deltaX = self.touchLocation.x - petCenterX
-        let deltaY = self.touchLocation.y - petCenterY
-        
+        let deltaX = self.touchLocation.x - self.containerSize.x * self.petOriginPosition.x
+        let deltaY = self.touchLocation.y - self.containerSize.y * self.petOriginPosition.y
         
         self.isMovingRight = deltaX > 0
         self.isMovingUp = deltaY > 0
+        
         let distance = sqrt(deltaX * deltaX + deltaY * deltaY)
         
         // 步长按容器比例缩放（基础步长为屏幕宽度的 2%）
@@ -169,24 +170,24 @@ struct Sence: View {
         self.HorizontalStepSize = abs(deltaX) / distance * baseStep
         self.VerticalStepSize = abs(deltaY) / distance * baseStep
         
-        let horizontalStep = isMovingRight ? HorizontalStepSize : -HorizontalStepSize
-        let verticalStep = isMovingUp ? VerticalStepSize: -VerticalStepSize
+        let horizontalStep = self.isMovingRight ? self.HorizontalStepSize : -self.HorizontalStepSize
+        let verticalStep = self.isMovingUp ? self.VerticalStepSize: -self.VerticalStepSize
         
-        let newX = petOriginPosition.x + horizontalStep
+        let newX = self.petOriginPosition.x + horizontalStep
         // 确保 newX 在 0 到 0.75 之间
         let clampedX = min(max(newX, 0.1), 0.75)
         
-        let newY = petOriginPosition.y + verticalStep
+        let newY = self.petOriginPosition.y + verticalStep
         // 确保 newX 在 0 到 0.75 之间
-        let clampedY = min(max(newY, 0.5), 1)
+        let clampedY = min(max(newY, 0.5), 0.9)
         withAnimation(.linear(duration: 0.5)) {
-            petOriginPosition.x = clampedX
-            petOriginPosition.y = clampedY
+            self.petOriginPosition.x = clampedX
+            self.petOriginPosition.y = clampedY
         }
         
-        
+        print(distance)
         // 如果距离小于某个阈值（例如 1），则认为已经到达目标位置
-        if distance < 5 {
+        if distance < self.containerSize.x*0.06 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.47) {
                 petStatus = .standing
                 touchLocation = .zero
@@ -205,7 +206,7 @@ struct Sence: View {
         
         let newY = petOriginPosition.y + verticalStep
         // 确保 newX 在 0 到 0.75 之间
-        let clampedY = min(max(newY, 0.5), 1)
+        let clampedY = min(max(newY, 0.5), 0.9)
         withAnimation(.linear(duration: 0.5)) {
             petOriginPosition.x = clampedX
             petOriginPosition.y = clampedY
@@ -231,7 +232,7 @@ struct Sence: View {
         
         let newY = petOriginPosition.y + verticalStep
         // 确保 newX 在 0 到 0.75 之间
-        let clampedY = min(max(newY, 0.5), 0.95)
+        let clampedY = min(max(newY, 0.5), 0.9)
         
         print(clampedX, clampedY)
         withAnimation(.linear(duration: 0.5)) {
