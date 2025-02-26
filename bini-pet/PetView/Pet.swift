@@ -69,6 +69,7 @@ struct PetView: View {
     
     // 定义传入的参数
     @Binding var status: PetStatus    // 宠物状态
+    @Binding var previousState: PetStatus    // 宠物状态
     @Binding var isMovingRight: Bool  // 控制移动左右方向
     @Binding var pettingTimes: Int    // 宠物的抚摸时间
     @Binding var petSize: CGSize
@@ -100,9 +101,13 @@ struct PetView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                    // 获取手指当前位置
-                        pettingTimes = 5
-                        status = .petting
+                        // 获取手指当前位置
+                        if status == .toEat || status == .eating {
+                            
+                        } else {
+                            pettingTimes = 5
+                            status = .petting
+                        }
                     }
             )
     }

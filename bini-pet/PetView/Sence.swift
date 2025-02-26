@@ -8,6 +8,13 @@
 import SwiftUI
 import SDWebImageSwiftUI
 
+struct TextSizeKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
 struct Sence: View {
     @State private var touchLocation: CGPoint = .zero  // 点击位置
     
@@ -24,6 +31,7 @@ struct Sence: View {
     @State private var VerticalStepSize: CGFloat = 0.05     // 每次移动的步长
     
     @State private var petStatus: PetStatus = .standing  // 宠物的状态
+    @State private var petPreviousState: PetStatus       // 宠物的上一个状态
     @State private var pettingTimes: Int = 0             // 宠物的抚摸时间步长
     
     @State private var hunger: Int = 50                  // 饱腹值
@@ -35,7 +43,7 @@ struct Sence: View {
             GeometryReader { container in
                 ZStack {
                     // 背景
-                    WebImage(url: Bundle.main.url(forResource: "room", withExtension: "png"))
+                    WebImage(url: Bundle.main.url(forResource: "room2", withExtension: "png"))
                         .resizable()
                         .scaledToFit()
                         .aspectRatio(contentMode: .fill) // 填充屏幕（可能裁剪图片）
@@ -57,13 +65,28 @@ struct Sence: View {
                             x: container.size.width * 0.4, // 水平位置 40%
                             y: container.size.height * 0.3 // 垂直位置 30%
                         )
+                    
+                    // 挂画（占容器宽度的 30%，高度自适应）
+                    WebImage(url: Bundle.main.url(forResource: "painting2", withExtension: "jpg"))
+                        .resizable()
+                        .scaledToFit()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(
+                            width: container.size.width * 0.3, // 容器宽度的 30%
+                            height: container.size.width * 0.4 // 保持正方形
+                        )
+                        .position(
+                            x: container.size.width * 0.7, // 水平位置 40%
+                            y: container.size.height * 0.3 // 垂直位置 30%
+                        )
+                    
                     // 点击标记点
-                    if touchLocation != .zero && (0.0...0.75).contains(touchLocation.x/container.size.width) && (0.5...1.0).contains(touchLocation.y/container.size.height) {
+                    if touchLocation != .zero && (0.0...0.75).contains(touchLocation.x/container.size.width) && (0.5...0.95).contains(touchLocation.y/container.size.height) {
                         Circle()
                             .fill(Color.green)
                             .frame(
-                                width: 6, // 标记点大小为宽度的 3%
-                                height: 6
+                                width: containerSize.x*0.035, // 标记点大小为宽度的 3%
+                                height: containerSize.x*0.035
                             )
                             .position(touchLocation)
                         }
@@ -95,17 +118,18 @@ struct Sence: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             // 计算点击位置相对于容器的比例坐标
-                            self.touchLocation = CGPoint(x: value.location.x, y: value.location.y)
-                            if touchLocation != .zero && (0.0...0.75).contains(touchLocation.x/container.size.width) && (0.5...1.0).contains(touchLocation.y/container.size.height) {
-                                isPlay = true
-                            } else {
-                                isPlay = false
-                            }
-                            
-                            if isPlay{
-                                petStatus = .walking
-                            } else {
-                                petStatus = .standing
+                            if petStatus != .toEat{
+                                self.touchLocation = CGPoint(x: value.location.x, y: value.location.y)
+                                if touchLocation != .zero && (0.0...0.75).contains(touchLocation.x/container.size.width) && (0.5...0.95).contains(touchLocation.y/container.size.height) {
+                                    isPlay = true
+                                } else {
+                                    isPlay = false
+                                }
+                                if isPlay{
+                                    petStatus = .walking
+                                } else {
+                                    petStatus = .standing
+                                }
                             }
                         }
                 )
@@ -113,9 +137,9 @@ struct Sence: View {
             .scaledToFit()
             .aspectRatio(contentMode: .fill)
             
-            Text("饱腹值")
+            Text("饱腹值: \(hunger)")
                 .font(.system(size: containerSize.x * 0.06, weight: .bold))
-                .position(x: containerSize.x * 0.1, y: -containerSize.y * 0.05)
+                .position(x: containerSize.x * 0.2, y: -containerSize.y * 0.06)
         }
         .background(Color.black)
     }
@@ -264,7 +288,7 @@ struct Sence: View {
         let components = calendar.dateComponents([.minute], from: now)
         
         if let minute = components.minute {
-            if minute == 58 || minute == 52 {
+            if minute == 0 || minute == 52 {
                 // 计算 pet 的当前位置
                 if petStatus != .toEat {
            

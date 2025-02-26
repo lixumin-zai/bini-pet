@@ -55,7 +55,10 @@
 				PetView/public/brown_petting_8fps.gif,
 				PetView/public/brown_walk_fast_8fps.gif,
 				PetView/public/outside_base.jpeg,
+				PetView/public/painting.jpg,
+				PetView/public/painting2.jpg,
 				PetView/public/room.png,
+				PetView/public/room2.png,
 				PetView/Sence.swift,
 				PetView/Status.swift,
 			);
