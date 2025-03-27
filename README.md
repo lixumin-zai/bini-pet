@@ -1,2 +1,2 @@
-## pet （ios & watchos）
+## Pet Simulator（ios & watchos）
 for 🐑
